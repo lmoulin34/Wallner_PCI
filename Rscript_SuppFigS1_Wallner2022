@@ -1,0 +1,189 @@
+#Script for statistical analysis of impact of inoculation of bacteria on rice growth
+
+library(tidyverse)
+library(ggpubr)
+library(rstatix)
+library(ggplot2)
+library(multcompView)
+
+#Set Working Directory
+
+setwd("C:/Users/moulinl/Documents/articles/RNAseq_exsudats_Riz/Test_croissanc")
+
+data<-read.csv2("6souches.csv",header=TRUE,sep=";",dec=".",na="")
+data
+
+# Indicate factor
+data$Treatment <- as.factor(data$Treatment)
+
+#Reorder data 
+data <- data %>% reorder_levels(Treatment, order = c("CTRL", "Bv10929", "Br441", "Bo444", "Ps630", "Pt659", "PkM130"))
+
+# Indicate Variables
+data$DWLeaves <- as.numeric(data$DWLeaves)
+data$DWRoots <- as.numeric(data$DWRoots)
+data$LeafLength <- as.numeric(data$LeafLength)
+
+#GRAPH LEAVE DRY WEIGHT
+hist(data$DWLeaves)
+
+
+res.kruskal <- kruskal.test(DWLeaves ~Treatment, data=data)
+res.kruskal
+
+
+pp <- pairwise.wilcox.test(data$DWLeaves, data$Treatment,p.adjust.method ="holm" )
+pp
+
+
+#function to transform test result as letter in the graph
+tri.to.squ<-function(x)
+{
+  rn <- row.names(x)
+  cn <- colnames(x)
+  an <- unique(c(cn,rn))
+  myval <-  x[!is.na(x)]
+  mymat <-  matrix(1,nrow=length(an),ncol=length(an),dimnames=list(an,an))
+  for(ext in 1:length(cn))
+  {
+    for(int in 1:length(rn))
+    {
+      if(is.na(x[row.names(x)==rn[int],colnames(x)==cn[ext]])) next
+      mymat[row.names(mymat)==rn[int],colnames(mymat)==cn[ext]]<-x[row.names(x)==rn[int],colnames(x)==cn[ext]]
+      mymat[row.names(mymat)==cn[ext],colnames(mymat)==rn[int]]<-x[row.names(x)==rn[int],colnames(x)==cn[ext]]
+    }
+    
+  }
+  return(mymat)
+} 
+
+
+mymat <-tri.to.squ(pp$p.value)
+mymat
+
+
+myletters <- multcompLetters(mymat,compare="<=",threshold=0.05,Letters=letters)
+myletters
+
+myletters_df <- data.frame(Treatment=names(myletters$Letters),letter = myletters$Letters )
+myletters_df
+
+ggplot(data, aes(x=Treatment, y=DWLeaves, colour=Treatment, fill=Treatment))+
+  geom_boxplot(outlier.alpha = 0, alpha=0.25)+
+  geom_jitter(width=0.25)+  
+  stat_summary(fun.y = 'mean', colour="black", geom="point", 
+               shape=18, size=2) +
+  theme_classic()+
+  theme(legend.position="none")+
+  theme(axis.text.x = element_text(angle=30, hjust=1, vjust=1))+ 
+  geom_text(data = myletters_df, aes(label = letter, y = 0.8), colour="black", size=4)
+
+
+#GRAPH ROOT DRY WEIGHT
+hist(data$DWRoots)
+
+
+#function to transform test result as letter in the graph
+tri.to.squ<-function(x)
+{
+  rn <- row.names(x)
+  cn <- colnames(x)
+  an <- unique(c(cn,rn))
+  myval <-  x[!is.na(x)]
+  mymat <-  matrix(1,nrow=length(an),ncol=length(an),dimnames=list(an,an))
+  for(ext in 1:length(cn))
+  {
+    for(int in 1:length(rn))
+    {
+      if(is.na(x[row.names(x)==rn[int],colnames(x)==cn[ext]])) next
+      mymat[row.names(mymat)==rn[int],colnames(mymat)==cn[ext]]<-x[row.names(x)==rn[int],colnames(x)==cn[ext]]
+      mymat[row.names(mymat)==cn[ext],colnames(mymat)==rn[int]]<-x[row.names(x)==rn[int],colnames(x)==cn[ext]]
+    }
+    
+  }
+  return(mymat)
+} 
+
+
+res.kruskal <- kruskal.test(DWRoots ~Treatment, data=data)
+res.kruskal
+
+pp <- pairwise.wilcox.test(data$DWRoots, data$Treatment,p.adjust.method ="holm" )
+pp
+
+mymat <-tri.to.squ(pp$p.value)
+mymat
+
+
+myletters <- multcompLetters(mymat,compare="<=",threshold=0.05,Letters=letters)
+myletters
+
+myletters_df <- data.frame(Treatment=names(myletters$Letters),letter = myletters$Letters )
+myletters_df
+
+ggplot(data, aes(x=Treatment, y=DWRoots, colour=Treatment, fill=Treatment))+
+  geom_boxplot(outlier.alpha = 0, alpha=0.25)+
+  geom_jitter(width=0.25)+  
+  stat_summary(fun.y = 'mean', colour="black", geom="point", 
+               shape=18, size=2) +
+  theme_classic()+
+  theme(legend.position="none")+
+  theme(axis.text.x = element_text(angle=30, hjust=1, vjust=1))+ 
+  geom_text(data = myletters_df, aes(label = letter, y = 0.8), colour="black", size=4)
+
+
+#GRAPH LEAVE LENGTH
+hist(data$LeafLength)
+
+
+#function to transform test result as letter in the graph
+tri.to.squ<-function(x)
+{
+  rn <- row.names(x)
+  cn <- colnames(x)
+  an <- unique(c(cn,rn))
+  myval <-  x[!is.na(x)]
+  mymat <-  matrix(1,nrow=length(an),ncol=length(an),dimnames=list(an,an))
+  for(ext in 1:length(cn))
+  {
+    for(int in 1:length(rn))
+    {
+      if(is.na(x[row.names(x)==rn[int],colnames(x)==cn[ext]])) next
+      mymat[row.names(mymat)==rn[int],colnames(mymat)==cn[ext]]<-x[row.names(x)==rn[int],colnames(x)==cn[ext]]
+      mymat[row.names(mymat)==cn[ext],colnames(mymat)==rn[int]]<-x[row.names(x)==rn[int],colnames(x)==cn[ext]]
+    }
+    
+  }
+  return(mymat)
+} 
+
+
+res.kruskal <- kruskal.test(LeafLength ~Treatment, data=data)
+res.kruskal
+
+pp <- pairwise.wilcox.test(data$LeafLength, data$Treatment,p.adjust.method ="holm" )
+pp
+
+mymat <-tri.to.squ(pp$p.value)
+mymat
+
+
+myletters <- multcompLetters(mymat,compare="<=",threshold=0.05,Letters=letters)
+myletters
+
+myletters_df <- data.frame(Treatment=names(myletters$Letters),letter = myletters$Letters )
+myletters_df
+
+ggplot(data, aes(x=Treatment, y=LeafLength, colour=Treatment, fill=Treatment))+
+  geom_boxplot(outlier.alpha = 0, alpha=0.25)+
+  geom_jitter(width=0.25)+  
+  stat_summary(fun.y = 'mean', colour="black", geom="point", 
+               shape=18, size=2) +
+  theme_classic()+
+  theme(legend.position="none")+
+  theme(axis.text.x = element_text(angle=30, hjust=1, vjust=1))+ 
+  geom_text(data = myletters_df, aes(label = letter, y = 70), colour="black", size=4)
+
+
+
+
